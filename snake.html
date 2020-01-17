@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<canvas id="myCanvas" width="200" height="100" style="border:1px solid #000000;">
+Your browser does not support the HTML5 canvas tag.
+</canvas>
+<script>
+	var snake = [{x:65, y:50, previousPosition:{ x: -1, y:-1}, direction:""}];
+	var particle = {x:65, y:50, direction:""};
+	var foodParticle = {x:0, y:0, eaten:true};
+	var canvas = document.getElementById("myCanvas");
+	var canvasWidth = canvas.width;
+	var canvasHeight = canvas.height;
+	var ctx = canvas.getContext("2d");
+	var canvasData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
+	var gameOver = false;
+
+	// That's how you define the value of a pixel //
+	function drawPixel (x, y, r, g, b, a) {
+		var index = (x + y * canvasWidth) * 4;
+
+		canvasData.data[index + 0] = r;
+		canvasData.data[index + 1] = g;
+		canvasData.data[index + 2] = b;
+		canvasData.data[index + 3] = a;
+	}
+	
+	function drawObjects(){
+		//Draw food
+		drawPixel(foodParticle.x, foodParticle.y, 0, 255, 0, 255);
+		//Draw snake
+		for(var i = 0; i < snake.length;i++){
+			drawPixel(snake[i].previousPosition.x, snake[i].previousPosition.y, 0, 0, 0, 0);
+			drawPixel(snake[i].x, snake[i].y, 255, 0, 0, 255);
+		}
+	}
+	// That's how you update the canvas, so that your //
+	// modification are taken in consideration //
+	function updateCanvas() {		
+		ctx.putImageData(canvasData, 0, 0);
+	}
+	
+	function keyDownHandler(e) {
+		console.log(snake);
+		console.log(foodParticle);
+		switch(e.code)
+		{
+			case "ArrowUp":
+				if (snake[0].direction !== "SOUTH")
+					snake[0].direction = "NORTH";
+			break;
+			case "ArrowDown":
+				if (snake[0].direction !== "NORTH")
+					snake[0].direction = "SOUTH";
+			break;
+			case "ArrowLeft":
+				if (snake[0].direction !== "EAST")
+					snake[0].direction = "WEST";
+			break;
+			case "ArrowRight":
+				if (snake[0].direction !== "WEST")
+					snake[0].direction = "EAST";
+			break;
+		}		
+	}
+	
+	function move(){
+		snake[0].previousPosition.y = snake[0].y;
+		snake[0].previousPosition.x = snake[0].x;
+		switch(snake[0].direction)
+		{
+			case "NORTH":
+				snake[0].y += -1;
+			break;
+			case "SOUTH":
+				snake[0].y += 1;
+			break;
+			case "WEST":
+				snake[0].x += -1;
+			break;
+			case "EAST":
+				snake[0].x += 1;
+			break;
+		}
+		
+		if (snake.length > 1){
+			var tempParticle = snake[0];
+			for(var i = 1; i < snake.length;i++){
+				snake[i].previousPosition.x = snake[i].x;
+				snake[i].x = tempParticle.previousPosition.x;
+				snake[i].previousPosition.y = snake[i].y;
+				snake[i].y = tempParticle.previousPosition.y;
+				tempParticle = snake[i];
+			}
+		}
+	}
+	
+	function putFood(){
+		var x = Math.floor((0.1 + Math.random()) * canvasWidth-1);
+		var y = Math.floor((0.1 + Math.random()) * canvasHeight-1);
+		
+		foodParticle.x = 50;
+		foodParticle.y = 50;
+		
+		foodParticle.eaten = false;
+	}
+	
+	function detectCollisions(){
+		// food
+		if (snake[0].x == foodParticle.x && snake[0].y == foodParticle.y){
+			console.log("Food particle collision");
+			var lastPart = snake[snake.length-1];
+			snake.push({x:lastPart.previousPosition.x, y: lastPart.previousPosition.y, previousPosition:{x:-1, y:-1}});
+			foodParticle.eaten = true;
+		}
+		// walls
+		if (snake[0].x == 0 || snake[0].x == canvasWidth || snake[0].y == 0 || snake[0].y == canvasHeight){
+			console.log("Wall Collision");
+			gameOver = true;
+		}
+		// snake body
+		if (snake.length > 4){
+			var head = snake[0];
+			for(var i = 4; i < snake.length; i++)
+				if (head.x == snake[i].x && head.y == snake[i].y)
+				{
+					console.log("Snake body collision");
+					gameOver = true;
+					break;
+				}
+		}
+	}
+	
+	function bindEvents(){
+		window.addEventListener("keydown", keyDownHandler, true);
+	}
+	
+	function initalize(){
+		drawPixel(snake[0].x, snake[0].y, 255, 0, 0, 255);
+	}
+	
+	function execute(){
+		if (!gameOver){
+			if (foodParticle.eaten){
+				putFood();
+			}
+			move();
+			detectCollisions();
+			drawObjects();
+			updateCanvas();
+		}
+	}
+
+	function main(){
+		initalize();
+		bindEvents();
+		setInterval(execute, 30);
+	}
+	
+	main();
+</script>
+</body>
+</html>
+ 
